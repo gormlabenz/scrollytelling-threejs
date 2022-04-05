@@ -22,21 +22,24 @@ const renderer = new THREE.WebGLRenderer(
 
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
+renderer.setClearColor(0x000000, 0)
 
 renderer.render(scene, camera)
 
-const geometry = new THREE.BoxGeometry(10, 10, 10)
-const material = new THREE.MeshBasicMaterial({ color: '#ffffff' })
-const cube = new THREE.Mesh(geometry, material)
+const material = new THREE.MeshStandardMaterial({ color:0xffffff, metalness:0, roughness:0.8 })
 
-//scene.add(cube)
+const geometry = new THREE.SphereGeometry(1, 32, 32)
+const sphere = new THREE.Mesh(geometry, material)
+scene.add(sphere)
 
 const fbxLoader = new FBXLoader()
 
+const iphones = new THREE.Group();
+
 fbxLoader.load(
     'assets/iphone.fbx',
-    (object) => {
-        object.traverse( (child)=> {
+    (iphone) => {
+        iphone.traverse( (child)=> {
              if (child.isMesh) {
                  child.material = material
                  if (child.material) {
@@ -44,9 +47,16 @@ fbxLoader.load(
                  }
              }
          })
-         console.log(object)
-         object.scale.set(.1, .1, .1)
-        scene.add(object)
+         iphone.scale.set(.1, .1, .1)
+         addIphone(iphone, 5)
+
+         const iphonesBox = new THREE.Box3().setFromObject( iphones );
+         const x = iphonesBox.getCenter(new THREE.Vector3()).x
+         iphones.position.set(-x,0,0)
+         
+         scene.add(iphones)
+
+         
     },
     (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
@@ -56,14 +66,34 @@ fbxLoader.load(
     }
 )
 
+const addIphone = (iphone, count) => {
+  for(let i = 0; i < count; i++) {
+    const newIphone = iphone.clone()
+    newIphone.position.set(10 *i,0,0)
+    //newIphone.rotation.y =  Math.PI * 0.1
+    iphones.add(newIphone)
+  }
+}
+
+
+const pointLight = new THREE.PointLight(0xffffff, 0.4)
+pointLight.position.set(5, 5, 5)
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+scene.add(ambientLight)
+
+scene.add(pointLight)
+
 function animate(){
   requestAnimationFrame(animate)
   position += speed
   speed *= 0.8
+  /* if(iphone){
+    iphone.rotation.y += 0.01
+    iphone.rotation.x += 0.01
+  } */
 
-  cube.rotation.x += position * 0.001
-  cube.rotation.y += 0.01
-  
+
   renderer.render(scene, camera)
 }
 
